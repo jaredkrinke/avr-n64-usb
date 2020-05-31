@@ -35,8 +35,6 @@ unsigned char n64GetState()
 }*/
 
 // C version
-//#define SET_BIT(p, b)		(p) |= _BV(b);
-//#define CLEAR_BIT(p, b)		(p) &= ~_BV(b);
 #define MODIFY_BIT(p, b, v)	(p) = ((p) & ~_BV(b)) | (((v) == 0) ? 0 : _BV(b))
 #define _NOP() asm("nop;\n");
 
@@ -88,7 +86,6 @@ inline void skipReadBit()
 	loop_until_bit_is_clear(PINB, 0);
 	wait10();
 	wait10();
-	PORTD = bit_is_set(PINB, 0) ? 0xff : 0x00;
 	loop_until_bit_is_set(PINB, 0);
 }
 
@@ -104,86 +101,50 @@ inline void skipReadByte()
 	skipReadBit();
 }
 
-unsigned char n64GetStateC()
+inline readAndOutputBit(unsigned char bit)
 {
-//	unsigned char firstByte = 0;
-
-	// TODO: Loop that is unrolled
-	// Poll
-	writeBit(0);
-	writeBit(0);
-	writeBit(0);
-	writeBit(0);
-	writeBit(0);
-	writeBit(0);
-	writeBit(0);
-	writeBit(1);
-
-	// Reset
-	/*writeBit(1);
-	writeBit(1);
-	writeBit(1);
-	writeBit(1);
-	writeBit(1);
-	writeBit(1);
-	writeBit(1);
-	writeBit(1);*/
-
-	writeStopBit();
-
-	// Expecting 4 byte response, plus stop bit
-	/*skipReadByte();
-	skipReadByte();
-	skipReadByte();
-	skipReadByte();
-	skipReadBit();
-
-
-	return 0;*/
-
-	// Bit 3
 	loop_until_bit_is_clear(PINB, 0);
 	wait10();
 	wait10();
-
-	return bit_is_set(PINB, 0);
+	MODIFY_BIT(PORTD, bit, bit_is_set(PINB, 0));
+	loop_until_bit_is_set(PINB, 0);
 }
 
-/*
-// Line test
-unsigned char getLineState()
+void n64GetStateC()
 {
-	DDRB = 0x00;
-	return bit_is_set(PINB, 0);
-}*/
+	// Sned "poll" message
+	writeBit(0);
+	writeBit(0);
+	writeBit(0);
+	writeBit(0);
+	writeBit(0);
+	writeBit(0);
+	writeBit(0);
+	writeBit(1);
+
+	writeStopBit();
+
+	// Response
+	skipReadBit();			// A
+	readAndOutputBit(7);	// B
+	skipReadBit();			// Z
+	skipReadBit();			// Start
+	readAndOutputBit(0);	// Up
+	readAndOutputBit(3);	// Down
+	readAndOutputBit(1);	// Left
+	readAndOutputBit(2);	// Right
+}
 
 int main()
 {
 	// NEVER modify PORTB! We must only drive the line low and never high.
 	PORTB = 0x00;
 
-	DDRD = 0xff; // Port D set to output
+	// Port D is for output to LEDs
+	DDRD = 0xff;
 	while (1)
 	{
-		//n64GetStateC();
-
-		if (n64GetStateC())
-		{
-			PORTD = 0xff;
-		}
-		else
-		{
-			PORTD = 0x00;
-		}
-
-		/*_delay_ms(50);
-		PORTD = 0x00;*/
-
-		//_delay_ms(50);
-		//PORTD = 0xff;
-		//_delay_ms(1000);
-		//PORTD = 0x00;
-
+		n64GetStateC();
 		_delay_ms(50);
 	}
 }
