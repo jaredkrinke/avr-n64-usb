@@ -18,7 +18,7 @@ Bits are sent (always most significant bit first) using the following encoding:
 
 * 1 microsecond low
 * 2 microseconds at either low (for a zero) or high (for a one)
-* 1 microsend high
+* 1 microsecond high
 
 Communication is terminated by 3 microsecond stop bit:
 
