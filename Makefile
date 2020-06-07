@@ -1,4 +1,4 @@
-PROJECT = BlinkTest
+PROJECT = avr-n64
 
 MCU = atmega32
 ELF = $(PROJECT).elf
@@ -14,7 +14,7 @@ LDFLAGS +=  -Wl,-Map=$(PROJECT).map
 
 HEX_FLASH_FLAGS = -R .eeprom -R .fuse -R .lock -R .signature
 
-OBJECTS = BlinkTest.o 
+OBJECTS = avr-n64.o
 LINKONLYOBJECTS = 
 
 all: $(ELF) $(TARGET)

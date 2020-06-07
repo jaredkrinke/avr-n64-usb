@@ -1,45 +1,23 @@
+// NOTE: This implementation assumes a specific clock speed and optimized output
 #define F_CPU 12000000UL // 12 MHz clock speed
 
 #include <avr/io.h>
 #include <util/delay.h>
 #include <avr/sfr_defs.h>
 
-/*
-// Assembly version -- FIX THIS -- it's backwards
-//#define N64_CONTROL_GET_STATE 0x01
-
-// Write (1 clock cycle, then 11 nops)
-#define N64_WAIT_10		asm("nop;\n nop;\n nop;\n nop;\n nop;\n nop;\n nop;\n nop;\n nop;\n nop;\n");
-#define N64_DRIVE_LOW	asm("cbi 0x17, 0;\n"); N64_WAIT_10 // DDRB0
-#define N64_FLOAT 		asm("sbi 0x17, 0;\n"); N64_WAIT_10 // DDRB0
-
-#define N64_WRITE_ZERO	N64_DRIVE_LOW N64_DRIVE_LOW N64_DRIVE_LOW N64_FLOAT
-#define N64_WRITE_ONE	N64_DRIVE_LOW N64_FLOAT N64_FLOAT N64_FLOAT
-#define N64_WRITE_STOP	N64_WRITE_ONE
-
-#define N64_REQUEST_STATE()	N64_WRITE_ONE N64_WRITE_ZERO N64_WRITE_ZERO N64_WRITE_ZERO N64_WRITE_ZERO N64_WRITE_ZERO N64_WRITE_ZERO N64_WRITE_ZERO N64_WRITE_STOP
-
-// Wait for low (2 + 10 cycles once low)
-#define N64_WAIT_FOR_LOW()	asm("sbic 0x16, 0;\n rjmp .-4;\n"); N64_WAIT_10 // PINB0
-#define N64_READ_PREPARE()	asm("nop;\n");
-
-unsigned char n64GetState()
-{
-	N64_REQUEST_STATE();
-	N64_WAIT_FOR_LOW();
-	N64_READ_PREPARE();
-
-	// Only read the first button (2 cycles)
-	unsigned char value = bit_is_set(PINB, 0) ? 1 : 0;
-	return value;
-}*/
-
-// C version
 #define MODIFY_BIT(p, b, v)	(p) = ((p) & ~_BV(b)) | (((v) == 0) ? 0 : _BV(b))
 #define _NOP() asm("nop;\n");
 
-inline void wait5()
+// Wait for next (microsecond) tick; call after a 2 cycle instruction
+inline void waitForNextTick()
 {
+	_NOP();
+	_NOP();
+
+	// TODO: Potentially remove if dropping the clock speed
+	_NOP();
+	_NOP();
+	_NOP();
 	_NOP();
 	_NOP();
 	_NOP();
@@ -47,45 +25,49 @@ inline void wait5()
 	_NOP();
 }
 
-inline void wait10()
+// A short wait, just to ensure pin voltage has changed (~0.25 microseconds)
+inline void waitShort()
 {
-	wait5();
-	wait5();
+	_NOP();
+
+	// TODO: Potentially remove if dropping the clock speed
+	waitForNextTick();
 }
 
-inline void wait12()
+// Skip an entire (microsecond) tick
+inline void skipTick()
 {
-	wait10();
 	_NOP();
 	_NOP();
+	waitForNextTick();
 }
 
 inline void writeBit(unsigned char bit)
 {
-	MODIFY_BIT(DDRB, 0, 1);
-	wait10();
+	MODIFY_BIT(DDRB, 0, 1); // sbi (2 cycles)
+	waitForNextTick();
 	MODIFY_BIT(DDRB, 0, (bit == 0) ? 1 : 0);
-	wait10();
+	waitForNextTick();
 	MODIFY_BIT(DDRB, 0, (bit == 0) ? 1 : 0);
-	wait10();
+	waitForNextTick();
 	MODIFY_BIT(DDRB, 0, 0);
-	wait10();
+	waitForNextTick();
 }
 
 inline void writeStopBit()
 {
 	MODIFY_BIT(DDRB, 0, 1);
-	wait10();
+	waitForNextTick();
 	MODIFY_BIT(DDRB, 0, 0);
-	wait10();
+	waitForNextTick();
 	MODIFY_BIT(DDRB, 0, 0);
 }
 
 inline void skipReadBit()
 {
-	loop_until_bit_is_clear(PINB, 0);
-	wait10();
-	wait10();
+	loop_until_bit_is_clear(PINB, 0); // sbic (1 - 3 cycles), rjmp (2 cycles)
+	waitForNextTick();
+	skipTick();
 	loop_until_bit_is_set(PINB, 0);
 }
 
@@ -104,15 +86,15 @@ inline void skipReadByte()
 inline void readAndOutputBit(unsigned char bit)
 {
 	loop_until_bit_is_clear(PINB, 0);
-	wait10();
-	wait10();
+	waitForNextTick();
+	waitShort();
 	MODIFY_BIT(PORTD, bit, bit_is_set(PINB, 0));
 	loop_until_bit_is_set(PINB, 0);
 }
 
 void n64GetStateC()
 {
-	// Sned "poll" message
+	// Send "poll" message (0x01)
 	writeBit(0);
 	writeBit(0);
 	writeBit(0);
