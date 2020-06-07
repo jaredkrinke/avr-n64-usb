@@ -28,5 +28,8 @@ $(ELF): $(OBJECTS)
 $(TARGET): $(ELF)
 	avr-objcopy -O ihex $(HEX_FLASH_FLAGS)  $< $@
 
-flash: $(PROJECT).hex
+dump: $(ELF)
+	avr-objdump -z -d $(ELF)
+
+flash: $(TARGET)
 	avrdude -c jtag1 -p m32 -P com3 -U flash:w:$(PROJECT).hex
