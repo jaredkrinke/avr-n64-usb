@@ -1,5 +1,5 @@
 // NOTE: This implementation assumes a specific clock speed and optimized output
-#define F_CPU 12000000UL // 12 MHz clock speed
+#define F_CPU 4000000UL // 4 MHz clock speed
 
 #include <avr/io.h>
 #include <util/delay.h>
@@ -13,25 +13,12 @@ inline void waitForNextTick()
 {
 	_NOP();
 	_NOP();
-
-	// TODO: Potentially remove if dropping the clock speed
-	_NOP();
-	_NOP();
-	_NOP();
-	_NOP();
-	_NOP();
-	_NOP();
-	_NOP();
-	_NOP();
 }
 
 // A short wait, just to ensure pin voltage has changed (~0.25 microseconds)
 inline void waitShort()
 {
 	_NOP();
-
-	// TODO: Potentially remove if dropping the clock speed
-	waitForNextTick();
 }
 
 // Skip an entire (microsecond) tick
@@ -124,6 +111,10 @@ int main()
 
 	// Port D is for output to LEDs
 	DDRD = 0xff;
+
+	// Short delay on boot
+	_delay_ms(5);
+
 	while (1)
 	{
 		n64GetStateC();
