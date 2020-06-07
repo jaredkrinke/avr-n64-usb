@@ -32,20 +32,28 @@ inline void skipTick()
     waitForNextTick();
 }
 
+// Write a single bit to the data line
 inline void writeBit(unsigned char bit)
 {
+    // Drive low for 1 tick
     MODIFY_BIT(DDRB, 0, 1); // sbi (2 cycles)
     waitForNextTick();
+
+    // Drive data value for 2 ticks
     MODIFY_BIT(DDRB, 0, (bit == 0) ? 1 : 0);
     waitForNextTick();
     MODIFY_BIT(DDRB, 0, (bit == 0) ? 1 : 0);
     waitForNextTick();
+
+    // Drive high for 1 tick
     MODIFY_BIT(DDRB, 0, 0);
     waitForNextTick();
 }
 
+// Write the host stop bit to the data line to end a message
 inline void writeStopBit()
 {
+    // Low for 1 tick, high for 2 ticks
     MODIFY_BIT(DDRB, 0, 1);
     waitForNextTick();
     MODIFY_BIT(DDRB, 0, 0);
@@ -53,26 +61,19 @@ inline void writeStopBit()
     MODIFY_BIT(DDRB, 0, 0);
 }
 
+// Read a bit from the data line, but don't do anything with it
 inline void skipReadBit()
 {
+    // Wait for data line to be driven low (and then skip 1 tick)
     loop_until_bit_is_clear(PINB, 0); // sbic (1 - 3 cycles), rjmp (2 cycles)
     waitForNextTick();
     skipTick();
+
+    // Wait for data line to be back high
     loop_until_bit_is_set(PINB, 0);
 }
 
-inline void skipReadByte()
-{
-    skipReadBit();
-    skipReadBit();
-    skipReadBit();
-    skipReadBit();
-    skipReadBit();
-    skipReadBit();
-    skipReadBit();
-    skipReadBit();
-}
-
+// Read a bit from the data line and modify a corresponding output pin on port D
 inline void readAndOutputBit(unsigned char bit)
 {
     loop_until_bit_is_clear(PINB, 0);
