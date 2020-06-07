@@ -101,7 +101,7 @@ inline void skipReadByte()
 	skipReadBit();
 }
 
-inline readAndOutputBit(unsigned char bit)
+inline void readAndOutputBit(unsigned char bit)
 {
 	loop_until_bit_is_clear(PINB, 0);
 	wait10();
