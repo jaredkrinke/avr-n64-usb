@@ -5,7 +5,7 @@
 #include <util/delay.h>
 #include <avr/sfr_defs.h>
 
-#define MODIFY_BIT(p, b, v)	(p) = ((p) & ~_BV(b)) | (((v) == 0) ? 0 : _BV(b))
+#define MODIFY_BIT(p, b, v) (p) = ((p) & ~_BV(b)) | (((v) == 0) ? 0 : _BV(b))
 #define _NOP() asm("nop;\n");
 
 // Wait for next (microsecond) tick; call after a 2 cycle instruction
@@ -94,14 +94,14 @@ void n64GetStateC()
     writeStopBit();
 
     // Response
-    skipReadBit();			// A
-    readAndOutputBit(7);	// B
-    skipReadBit();			// Z
-    skipReadBit();			// Start
-    readAndOutputBit(0);	// Up
-    readAndOutputBit(3);	// Down
-    readAndOutputBit(1);	// Left
-    readAndOutputBit(2);	// Right
+    skipReadBit();          // A
+    readAndOutputBit(7);    // B
+    skipReadBit();          // Z
+    skipReadBit();          // Start
+    readAndOutputBit(0);    // Up
+    readAndOutputBit(3);    // Down
+    readAndOutputBit(1);    // Left
+    readAndOutputBit(2);    // Right
 }
 
 int main()
