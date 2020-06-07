@@ -1,4 +1,4 @@
-// NOTE: This implementation assumes a specific clock speed and optimized output
+// NOTE: This implementation assumes >= 4 MHz clock speed and optimized output (including loop unrolling)
 #define F_CPU 4000000UL // 4 MHz clock speed
 
 #include <avr/io.h>
@@ -11,14 +11,17 @@
 // Wait for next (microsecond) tick; call after a 2 cycle instruction
 inline void waitForNextTick()
 {
-    _NOP();
-    _NOP();
+    for (int i = 0; i < ((F_CPU / 1000000) - 2); i++) {
+        _NOP();
+    }
 }
 
 // A short wait, just to ensure pin voltage has changed (~0.25 microseconds)
 inline void waitShort()
 {
-    _NOP();
+    for (int i = 0; i < (((F_CPU / 2500000) > 0) ? (F_CPU / 2500000) : 1); i++) {
+        _NOP();
+    }
 }
 
 // Skip an entire (microsecond) tick
