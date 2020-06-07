@@ -1,8 +1,10 @@
 PROJECT = BlinkTest
-MCU = atmega32
-TARGET = $(PROJECT).elf
-CC = avr-gcc
 
+MCU = atmega32
+ELF = $(PROJECT).elf
+TARGET = $(PROJECT).hex
+
+CC = avr-gcc
 COMMON = -mmcu=$(MCU)
 CFLAGS = $(COMMON)
 CFLAGS += -Wall -gdwarf-2 -Os -std=gnu99 -funsigned-char -funsigned-bitfields -fpack-struct -fshort-enums
@@ -15,13 +17,16 @@ HEX_FLASH_FLAGS = -R .eeprom -R .fuse -R .lock -R .signature
 OBJECTS = BlinkTest.o 
 LINKONLYOBJECTS = 
 
-all: $(TARGET) $(PROJECT).hex
+all: $(ELF) $(TARGET)
 
 %.o: %.c
 	$(CC) $(INCLUDES) $(CFLAGS) -c  $<
 
-$(TARGET): $(OBJECTS)
-	 $(CC) $(LDFLAGS) $(OBJECTS) $(LINKONLYOBJECTS) $(LIBDIRS) $(LIBS) -o $(TARGET)
+$(ELF): $(OBJECTS)
+	 $(CC) $(LDFLAGS) $(OBJECTS) $(LINKONLYOBJECTS) $(LIBDIRS) $(LIBS) -o $(ELF)
 
-%.hex: $(TARGET)
+$(TARGET): $(ELF)
 	avr-objcopy -O ihex $(HEX_FLASH_FLAGS)  $< $@
+
+flash: $(PROJECT).hex
+	avrdude -c jtag1 -p m32 -P com3 -U flash:w:$(PROJECT).hex
