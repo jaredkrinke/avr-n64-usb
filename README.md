@@ -37,7 +37,7 @@ The host initiates communication by sending 1 byte messages. The 0x01 message po
 This implementation uses an ATmega32 (DIP package) running at 4 MHz (using the internal oscillator), with a power supply of 5 volts (in my case, from a repurposed cell phone charger). A 3.3 volt linear regulator supplies power to the controller.
 
 ### Timing
-This setup uses a software implementation of the protocol ("bit banging"). The code is written in C, but it assumes specific optimized compiler output (e.g. using "cbi" and "sbi" instructions for manipulating the data pin), hard codes the 12 MHz CPU frequency, and uses "nop" instructions to ensure a 1 MHz data clock. This code is not portable and thus probably not suitable for use in other projects.
+This setup uses a software implementation of the protocol ("bit banging"). The code is written in C, but it assumes specific optimized compiler output (e.g. using "cbi" and "sbi" instructions for manipulating the data pin), hard codes the 4 MHz CPU frequency, and uses "nop" instructions to ensure a 1 MHz data clock. This code is not portable and thus probably not suitable for use in other projects.
 
 ### Open collector output pin
 The ATmega32 doesn't have an obvious "open collector output" mode, but one can be implemented by:
