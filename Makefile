@@ -7,7 +7,7 @@ TARGET = $(PROJECT).hex
 CC = avr-gcc
 COMMON = -mmcu=$(MCU)
 CFLAGS = $(COMMON)
-CFLAGS += -Wall -gdwarf-2 -Os -std=gnu99 -funsigned-char -funsigned-bitfields -fpack-struct -fshort-enums -funroll-loops
+CFLAGS += -Wall -gdwarf-2 -Os -std=gnu99 -funsigned-bitfields -fpack-struct -fshort-enums -funroll-loops
 
 LDFLAGS = $(COMMON)
 LDFLAGS +=  -Wl,-Map=$(PROJECT).map

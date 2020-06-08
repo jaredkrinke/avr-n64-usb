@@ -5,13 +5,42 @@
 #include <util/delay.h>
 #include <avr/sfr_defs.h>
 
-#define MODIFY_BIT(p, b, v) (p) = ((p) & ~_BV(b)) | (((v) == 0) ? 0 : _BV(b))
+#define MODIFY_BIT(p, b, v) (p) = ((p) & ~_BV(b)) | ((v) ? _BV(b) : 0)
 #define _NOP() asm("nop;\n");
+
+// "Poll" request and response
+#define N64_MESSAGE_POLL    0x01
+
+#define N64_BUTTON_PRESSED(state, byte, bit) ((((state).byte) & _BV(bit)) != 0)
+#define N64_BUTTON_A(state)     N64_BUTTON_PRESSED(state, buttons1, 7)
+#define N64_BUTTON_B(state)     N64_BUTTON_PRESSED(state, buttons1, 6)
+#define N64_BUTTON_Z(state)     N64_BUTTON_PRESSED(state, buttons1, 5)
+#define N64_BUTTON_START(state) N64_BUTTON_PRESSED(state, buttons1, 4)
+#define N64_BUTTON_UP(state)    N64_BUTTON_PRESSED(state, buttons1, 3)
+#define N64_BUTTON_DOWN(state)  N64_BUTTON_PRESSED(state, buttons1, 2)
+#define N64_BUTTON_LEFT(state)  N64_BUTTON_PRESSED(state, buttons1, 1)
+#define N64_BUTTON_RIGHT(state) N64_BUTTON_PRESSED(state, buttons1, 0)
+#define N64_BUTTON_RESET(state) N64_BUTTON_PRESSED(state, buttons2, 7)
+#define N64_BUTTON_RESERVED(state) N64_BUTTON_PRESSED(state, buttons2, 6)
+#define N64_BUTTON_L(state) N64_BUTTON_PRESSED(state, buttons2, 5)
+#define N64_BUTTON_R(state) N64_BUTTON_PRESSED(state, buttons2, 4)
+#define N64_BUTTON_CUP(state) N64_BUTTON_PRESSED(state, buttons2, 3)
+#define N64_BUTTON_CDOWN(state) N64_BUTTON_PRESSED(state, buttons2, 2)
+#define N64_BUTTON_CLEFT(state) N64_BUTTON_PRESSED(state, buttons2, 1)
+#define N64_BUTTON_CRIGHT(state) N64_BUTTON_PRESSED(state, buttons2, 0)
+
+typedef struct {
+    unsigned char buttons1;
+    unsigned char buttons2;
+    char joystickHorizontal;
+    char joystickVertical;
+} n64ControllerState;
 
 // Wait for next (microsecond) tick; call after a 2 cycle instruction
 inline void waitForNextTick()
 {
-    for (int i = 0; i < ((F_CPU / 1000000) - 2); i++) {
+    for (int i = 0; i < ((F_CPU / 1000000) - 2); i++)
+    {
         _NOP();
     }
 }
@@ -19,7 +48,8 @@ inline void waitForNextTick()
 // A short wait, just to ensure pin voltage has changed (~0.25 microseconds)
 inline void waitShort()
 {
-    for (int i = 0; i < (((F_CPU / 2500000) > 0) ? (F_CPU / 2500000) : 1); i++) {
+    for (int i = 0; i < (((F_CPU / 2500000) > 0) ? (F_CPU / 2500000) : 1); i++)
+    {
         _NOP();
     }
 }
@@ -40,9 +70,9 @@ inline void writeBit(unsigned char bit)
     waitForNextTick();
 
     // Drive data value for 2 ticks
-    MODIFY_BIT(DDRB, 0, (bit == 0) ? 1 : 0);
+    MODIFY_BIT(DDRB, 0, bit == 0);
     waitForNextTick();
-    MODIFY_BIT(DDRB, 0, (bit == 0) ? 1 : 0);
+    MODIFY_BIT(DDRB, 0, bit == 0);
     waitForNextTick();
 
     // Drive high for 1 tick
@@ -61,51 +91,65 @@ inline void writeStopBit()
     MODIFY_BIT(DDRB, 0, 0);
 }
 
-// Read a bit from the data line, but don't do anything with it
-inline void skipReadBit()
+inline void sendMessage(unsigned char message)
 {
-    // Wait for data line to be driven low (and then skip 1 tick)
-    loop_until_bit_is_clear(PINB, 0); // sbic (1 - 3 cycles), rjmp (2 cycles)
-    waitForNextTick();
-    skipTick();
-
-    // Wait for data line to be back high
-    loop_until_bit_is_set(PINB, 0);
+    writeBit((message & (1 << 7)) == 0 ? 0 : 1);
+    writeBit((message & (1 << 6)) == 0 ? 0 : 1);
+    writeBit((message & (1 << 5)) == 0 ? 0 : 1);
+    writeBit((message & (1 << 4)) == 0 ? 0 : 1);
+    writeBit((message & (1 << 3)) == 0 ? 0 : 1);
+    writeBit((message & (1 << 2)) == 0 ? 0 : 1);
+    writeBit((message & (1 << 1)) == 0 ? 0 : 1);
+    writeBit((message & (1 << 0)) == 0 ? 0 : 1);
+    writeStopBit();
 }
 
-// Read a bit from the data line and modify a corresponding output pin on port D
-inline void readAndOutputBit(unsigned char bit)
+// Read a bit from the data line
+inline void readBit(int n, unsigned char* value)
 {
+    // Low for 1 tick
     loop_until_bit_is_clear(PINB, 0);
     waitForNextTick();
+
+    // Value for 2 ticks
     waitShort();
-    MODIFY_BIT(PORTD, bit, bit_is_set(PINB, 0));
+    MODIFY_BIT(*value, n, bit_is_set(PINB, 0));
+
+    // High for 1 tick
     loop_until_bit_is_set(PINB, 0);
 }
 
-void n64GetStateC()
+// Read a byte from the data line (most significant bit first)
+inline void readByte(unsigned char* value)
 {
-    // Send "poll" message (0x01)
-    writeBit(0);
-    writeBit(0);
-    writeBit(0);
-    writeBit(0);
-    writeBit(0);
-    writeBit(0);
-    writeBit(0);
-    writeBit(1);
+    readBit(7, value);
+    readBit(6, value);
+    readBit(5, value);
+    readBit(4, value);
+    readBit(3, value);
+    readBit(2, value);
+    readBit(1, value);
+    readBit(0, value);
+}
 
-    writeStopBit();
+void n64ControllerPoll(n64ControllerState* state)
+{
+    sendMessage(N64_MESSAGE_POLL);
 
-    // Response
-    skipReadBit();          // A
-    readAndOutputBit(7);    // B
-    skipReadBit();          // Z
-    skipReadBit();          // Start
-    readAndOutputBit(0);    // Up
-    readAndOutputBit(3);    // Down
-    readAndOutputBit(1);    // Left
-    readAndOutputBit(2);    // Right
+    unsigned char b1 = 0;
+    unsigned char b2 = 0;
+    unsigned char jx = 0;
+    unsigned char jy = 0;
+
+    readByte(&b1);
+    readByte(&b2);
+    readByte(&jx);
+    readByte(&jy);
+
+    state->buttons1 = b1;
+    state->buttons2 = b2;
+    state->joystickHorizontal = (char)jx;
+    state->joystickVertical = (char)jy;
 }
 
 int main()
@@ -121,7 +165,18 @@ int main()
 
     while (1)
     {
-        n64GetStateC();
+        // Get controller state
+        n64ControllerState state;
+        n64ControllerPoll(&state);
+
+        // Light up LEDs
+        MODIFY_BIT(PORTD, 0, state.joystickVertical > 30);
+        MODIFY_BIT(PORTD, 3, state.joystickVertical < -30);
+        MODIFY_BIT(PORTD, 1, state.joystickHorizontal < -30);
+        MODIFY_BIT(PORTD, 2, state.joystickHorizontal > 30);
+
+        MODIFY_BIT(PORTD, 7, N64_BUTTON_B(state));
+
         _delay_ms(50);
     }
 }
