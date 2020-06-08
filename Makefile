@@ -14,7 +14,7 @@ LDFLAGS +=  -Wl,-Map=$(PROJECT).map
 
 HEX_FLASH_FLAGS = -R .eeprom -R .fuse -R .lock -R .signature
 
-OBJECTS = avr-n64.o
+OBJECTS = demo.o
 LINKONLYOBJECTS = 
 
 all: $(ELF) $(TARGET)

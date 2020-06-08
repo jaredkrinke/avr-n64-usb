@@ -1,8 +1,9 @@
 // NOTE: This implementation assumes >= 4 MHz clock speed (F_CPU symbol) and optimized output (including loop unrolling, i.e. -funroll-loops for GCC)
-#define F_CPU 4000000UL // 4 MHz clock speed
+#if !defined(F_CPU) || F_CPU < 4000000
+#error "Clock speed (F_CPU) must be at least 4 MHz"
+#endif
 
 #include <avr/io.h>
-#include <util/delay.h>
 #include <avr/sfr_defs.h>
 
 // Controller interface
@@ -169,29 +170,4 @@ void n64_controller_get_state(n64_controller_state_t* state)
 
     state->joystick_horizontal = (signed char)jx;
     state->joystick_vertical = (signed char)jy;
-}
-
-int main()
-{
-    // Port D is for output to LEDs
-    DDRD = 0xff;
-
-    // Short delay on boot
-    _delay_ms(5);
-
-    while (1)
-    {
-        // Get controller state
-        n64_controller_state_t state;
-        n64_controller_get_state(&state);
-
-        // Light up LEDs
-        PORTD = ((state.joystick_vertical > 30) ? _BV(0) : 0)
-            | ((state.joystick_vertical < -30) ? _BV(3) : 0)
-            | ((state.joystick_horizontal < -30) ? _BV(1) : 0)
-            | ((state.joystick_horizontal > 30) ? _BV(2) : 0)
-            | ((state.b) ? _BV(7) : 0);
-
-        _delay_ms(50);
-    }
 }
