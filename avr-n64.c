@@ -32,8 +32,8 @@
 typedef struct {
     unsigned char buttons1;
     unsigned char buttons2;
-    char joystickHorizontal;
-    char joystickVertical;
+    signed char joystickHorizontal;
+    signed char joystickVertical;
 } n64ControllerState;
 
 // Wait for next (microsecond) tick; call after a 2 cycle instruction
@@ -148,8 +148,8 @@ void n64ControllerPoll(n64ControllerState* state)
 
     state->buttons1 = b1;
     state->buttons2 = b2;
-    state->joystickHorizontal = (char)jx;
-    state->joystickVertical = (char)jy;
+    state->joystickHorizontal = (signed char)jx;
+    state->joystickVertical = (signed char)jy;
 }
 
 int main()
