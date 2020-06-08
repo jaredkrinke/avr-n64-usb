@@ -4,6 +4,17 @@ Read state from a Nintendo 64 controller using an ATmega32 microcontroller and l
 
 ![Demo](../data/demo.gif)
 
+## Library notes
+The communication library is implemented a single header file: `avr-n64.h`. To get the state of a controller, call this function:
+
+```c
+void n64_controller_get_state(n64_controller_state_t* state);
+```
+
+The library assumes the controller data line is connected to port B, bit 0.
+
+Note: while the code is written in C, it assumes specific optimized compiler output (e.g. loop unrolling). See `CFLAGS` in `Makefile` for more detail.
+
 ## Protocol notes
 The controller uses 3 wires: two for power, one for half-duplex serial communication based on a 1 MHz clock with roughly 31 kbps of bandwidth.
 
@@ -34,10 +45,10 @@ The host initiates communication by sending 1 byte messages. The 0x01 message po
 * Analog joystick vertical position
 
 ## Implementation notes
-This implementation uses an ATmega32 (DIP package) running at 4 MHz (using the internal oscillator), with a power supply of 5 volts (in my case, from a repurposed cell phone charger). A 3.3 volt linear regulator supplies power to the controller.
+This implementation uses an ATmega32 (DIP package) running at >= 4 MHz (tested using the internal oscillator), with a power supply of 5 volts (tested with a repurposed cell phone charger). A 3.3 volt linear regulator supplies power to the controller.
 
 ### Timing
-This setup uses a software implementation of the protocol ("bit banging"). The code is written in C, but it assumes specific optimized compiler output (e.g. loop unrolling and using "cbi" and "sbi" instructions for manipulating the data pin), and uses "nop" instructions to ensure a 1 MHz data clock. See CFLAGS in the Makefile for more detail.
+This setup uses a software implementation of the protocol ("bit banging"). The code assumes specific optimized compiler output (e.g. loop unrolling and using "cbi" and "sbi" instructions for manipulating the data pin), and uses "nop" instructions to ensure a 1 MHz data clock.
 
 ### Open collector output pin
 The ATmega32 doesn't have an obvious "open collector output" mode, but one can be implemented by:
