@@ -1,5 +1,3 @@
-#define F_CPU 4000000UL // 4 MHz clock speed
-
 #include <avr/io.h>
 #include <util/delay.h>
 #include <avr/sfr_defs.h>
@@ -9,9 +7,6 @@ int main()
 {
     // Port D is for output to LEDs
     DDRD = 0xff;
-
-    // Short delay on boot
-    _delay_ms(5);
 
     while (1)
     {
