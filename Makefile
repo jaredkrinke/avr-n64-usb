@@ -1,4 +1,4 @@
-PROJECT = avr-n64
+PROJECT = avr-n64-usb
 
 MCU = atmega32
 F_CPU = 12000000
@@ -17,7 +17,7 @@ LDFLAGS +=  -Wl,-Map=$(PROJECT).map
 
 HEX_FLASH_FLAGS = -R .eeprom -R .fuse -R .lock -R .signature
 
-OBJECTS = demo.o #usb.o usbdrv/usbdrv.o usbdrv/usbdrvasm.o
+OBJECTS = demo.o usbdrv/usbdrv.o usbdrv/usbdrvasm.o
 LINKONLYOBJECTS = 
 
 all: $(ELF) $(TARGET)
