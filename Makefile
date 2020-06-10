@@ -17,7 +17,7 @@ LDFLAGS +=  -Wl,-Map=$(PROJECT).map
 
 HEX_FLASH_FLAGS = -R .eeprom -R .fuse -R .lock -R .signature
 
-OBJECTS = demo.o usbdrv/usbdrv.o usbdrv/usbdrvasm.o
+OBJECTS = n64-usb.o usbdrv/usbdrv.o usbdrv/usbdrvasm.o
 LINKONLYOBJECTS = 
 
 all: $(ELF) $(TARGET)
