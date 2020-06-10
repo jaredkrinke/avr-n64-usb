@@ -20,21 +20,6 @@ PROGMEM const char usbHidReportDescriptor[USB_CFG_HID_REPORT_DESCRIPTOR_LENGTH] 
     0x09, 0x01,     //   USAGE (Pointer)
     0xa1, 0x00,     //   COLLECTION (Physical)
 
-    // D-pad
-    0x15, 0x00,     //     LOGICAL_MINIMUM (0)
-    0x25, 0x01,     //     LOGICAL_MAXIMUM (1)
-    0x09, 0x90,     //     USAGE (D-pad Up)
-    0x09, 0x91,     //     USAGE (D-pad Down)
-    0x09, 0x93,     //     USAGE (D-pad Left)
-    0x09, 0x92,     //     USAGE (D-pad Right)
-    0x75, 0x01,     //     REPORT_SIZE (1)
-    0x95, 0x04,     //     REPORT_COUNT (4)
-    0x81, 0x02,     //     INPUT (Data,Var,Abs)
-
-    0x75, 0x01,     //     REPORT_SIZE (1)
-    0x95, 0x04,     //     REPORT_COUNT (4)
-    0x81, 0x01,     //     INPUT (Constant)
-
     // Joystick
     0x09, 0x30,     //     USAGE (X)
     0x09, 0x31,     //     USAGE (Y)
@@ -44,7 +29,7 @@ PROGMEM const char usbHidReportDescriptor[USB_CFG_HID_REPORT_DESCRIPTOR_LENGTH] 
     0x95, 0x02,     //     REPORT_COUNT (2)
     0x81, 0x02,     //     INPUT (Data,Var,Abs)
 
-    // C buttons
+    // D-pad
     0x09, 0x33,     //     USAGE (Rx)
     0x09, 0x34,     //     USAGE (Ry)
     0x15, 0xff,     //     LOGICAL_MINIMUM (-1)
@@ -58,15 +43,15 @@ PROGMEM const char usbHidReportDescriptor[USB_CFG_HID_REPORT_DESCRIPTOR_LENGTH] 
     // Buttons
     0x05, 0x09,     //   USAGE_PAGE (Button)
     0x19, 0x01,     //   USAGE_MINIMUM (Button 1)
-    0x29, 0x06,     //   USAGE_MAXIMUM (Button 6)
+    0x29, 0x0a,     //   USAGE_MAXIMUM (Button 10)
     0x15, 0x00,     //   LOGICAL_MINIMUM (0)
     0x25, 0x01,     //   LOGICAL_MAXIMUM (1)
     0x75, 0x01,     //   REPORT_SIZE (1)
-    0x95, 0x06,     //   REPORT_COUNT (6)
+    0x95, 0x0a,     //   REPORT_COUNT (10)
     0x81, 0x02,     //   INPUT (Data,Var,Abs)
 
     0x75, 0x01,     //   REPORT_SIZE (1)
-    0x95, 0x02,     //   REPORT_COUNT (2)
+    0x95, 0x06,     //   REPORT_COUNT (6)
     0x81, 0x01,     //   INPUT (Constant)
 
     0xc0            // END_COLLECTION
@@ -112,27 +97,26 @@ int main()
             n64_controller_get_state(&state);
             sei();
 
-            // D-pad
-            report[0] = (state.up ? _BV(0) : 0)
-                | (state.down ? _BV(1) : 0)
-                | (state.left ? _BV(2) : 0)
-                | (state.right ? _BV(3) : 0);
-
             // Joystick
-            report[1] = (uint8_t)CLAMP_AXIS(state.joystick_horizontal);
-            report[2] = (uint8_t)CLAMP_AXIS(-state.joystick_vertical); // down is positive
+            report[0] = (uint8_t)CLAMP_AXIS(state.joystick_horizontal);
+            report[1] = (uint8_t)CLAMP_AXIS(-state.joystick_vertical); // down is positive
 
-            // C buttons
-            report[3] = (uint8_t)(state.c_left ? -1 : (state.c_right ? 1 : 0));
-            report[4] = (uint8_t)(state.c_down ? 1 : (state.c_up ? -1 : 0)); // down is positive
+            // D-pad
+            report[2] = (uint8_t)(state.left ? -1 : (state.right ? 1 : 0));
+            report[3] = (uint8_t)(state.down ? 1 : (state.up ? -1 : 0)); // down is positive
 
             // Buttons
-            report[5] = (state.a ? _BV(0) : 0)
+            report[4] = (state.a ? _BV(0) : 0)
                 | (state.b ? _BV(1) : 0)
                 | (state.z ? _BV(2) : 0)
-                | (state.start ? _BV(3) : 0)
-                | (state.l ? _BV(4) : 0)
-                | (state.r ? _BV(5) : 0);
+                | (state.l ? _BV(3) : 0)
+                | (state.r ? _BV(4) : 0)
+                | (state.c_left ? _BV(5) : 0)
+                | (state.c_down ? _BV(6) : 0)
+                | (state.c_up ? _BV(7) : 0);
+
+            report[5] = (state.c_right ? _BV(0) : 0)
+                | (state.start ? _BV(1) : 0);
 
             PORTD ^= _BV(7);
             usbSetInterrupt(report, sizeof(report));
