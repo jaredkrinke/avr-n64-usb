@@ -20,6 +20,12 @@ The Nintendo 64 controller is powered at 3.3V using a linear regulator. The N64 
 
 The USB D+ and D- lines (connected to PORTD2/INT0 and PORTD4, respectively) are run at 3.3V using zener diodes and resistors (including a pull-up resistor on D-) as suggested by [V-USB's sample circuit](https://www.obdev.at/products/vusb/index.html).
 
+#### Schematic
+* [Schematic SVG](../../raw/data/schematic.svg)
+* [Schematic PNG](../../raw/data/schematic.png)
+* [Source (KiCad schematic file)](../../raw/data/avr-n64-usb.sch)
+
+#### Picture
 ![Breadboard](../data/avr-n64-usb-breadboard.jpg)
 
 ## External resources
